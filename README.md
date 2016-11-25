@@ -16,18 +16,21 @@ After implementation, the following measurements will be made:
 
 ## Security Improvements
 
->TBA
+* Checking whether the client asks for the stream
+  * Prevents spoofing
+  * Prevents stream simulations to change the time
+>More TBA
 
 ## Implementations
 
-[x] Algorithm Design
-[ ] Object Oriented Design
-[ ] Removing Timers
-[ ] Coding the sniffer
-[ ] Testing
-[ ] Measuring Time
-[ ] Measuring Minimum nr of Packets
-[ ] Measure NTP (Wireshark)
-[ ] Compare with NTP
-[ ] Report
- 
+- [x] Algorithm Design
+- [x] Object Oriented Design
+- [ ] Removing Timers
+- [ ] Coding the sniffer
+- [ ] Coding the Synchronization
+- [ ] Testing
+- [ ] Measuring Time
+- [ ] Measuring Minimum number of Packets
+- [ ] Measure NTP (Wireshark)
+- [ ] Compare with NTP
+- [ ] Report
