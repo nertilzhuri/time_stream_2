@@ -1,12 +1,12 @@
-import timeimport threading
+import time
+import threading
 from scapy.all import *
-
-import Stream from Stream
+from Stream import *
 
 #Dictionary of streams (to find the stream faster)
 streams = {}
 
-DEBUG = 0; #level 0, 1, 2, 3
+DEBUG = 3; #level 0, 1, 2, 3
 
 def manage_pckg(pack):
     """
@@ -23,37 +23,40 @@ def manage_pckg(pack):
         blacklisted = False
         is_stream = 0
 
-        if stream_val.has_key(ip):
+        if streams.has_key(ip):
             #check if it is blacklisted
-            Stream s = streams[ip]
+            s = streams[ip]
             if s.blacklisted:
                 blacklisted = True
-        elif stream_val.has_key(temp_ip):
+        elif streams.has_key(temp_ip):
             #Using the same IP's
             ip = temp_ip
-            Stream s = streams[ip]
+            s = streams[ip]
             if s.blacklisted:
                 blacklisted = True
         else:
-            streams(ip) = Streams(ip, DEBUG)
+            streams[ip] = Stream(ip, DEBUG)
 
         if not blacklisted:
 
             #No timestamp no stream (decide directly)
             if not "Timestamp" in str(pack[TCP].options):
-                if DEBUG > 2:
+                if DEBUG >= 2:
                     print("Stream "+ip+" blacklisted due to no Timestamp")
-                streams[ip].blacklisted = True;
+                streams[ip].blacklist()
                 return #end the thread here
 
-            timestamp = ""
+            ss = str(pack[TCP].options)
+            i1=ss.find("(", ss.find("Timestamp"))
+            i2=ss.find(")", i1)
+            timestamp = ss[i1+1:i2].split(",")
 
             #Reading the RAW data for information (HTTP)
             if pack.haslayer(Raw):
                 if not "HTTP" in pack[Raw].load:
-                    if DEBUG > 2:
-                        print("Stream "+ip+" blacklisted due to no HTTP")
-                    streams[ip].blacklisted = True;
+                    #if DEBUG >= 2:
+                        #print("Stream "+ip+" blacklisted due to no HTTP")
+                    #streams[ip].blacklisted = True;
                     return #end the thread here
                 else:
                     #there is HTTP, extract information
@@ -84,9 +87,9 @@ def manage_pckg(pack):
                     streams[ip].record_packet(timestamp, clock_t, has_av, has_hls_content_type, has_dash_content_type)
 
             else:
-                if DEBUG > 2:
-                    print("Stream "+ip+" blacklisted due to no Raw layer")
-                streams[ip].blacklisted = True;
+                #if DEBUG >= 2:
+                #    print("Stream "+ip+" blacklisted due to no Raw layer")
+                #streams[ip].blacklisted = True;
                 return #end the thread here
 
 #call sniffer:
