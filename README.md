@@ -28,7 +28,8 @@ After implementation, the following measurements will be made:
 - [x] Object Oriented Design
 - [x] Removing Timers
 - [x] Coding the sniffer
-- [ ] Coding the Synchronization
+- [x] Coding the decider
+- [x] Coding the Synchronization
 - [ ] Testing
 - [ ] Measuring Time
 - [ ] Measuring Minimum number of Packets

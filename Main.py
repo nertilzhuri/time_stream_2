@@ -1,5 +1,6 @@
 import time
 import threading
+import datetime
 from scapy.all import *
 from Stream import *
 
@@ -7,6 +8,22 @@ from Stream import *
 streams = {}
 
 DEBUG = 3; #level 0, 1, 2, 3
+
+def sync():
+    """
+        This thread will collect the calculated times and display
+        Here the marzullos algorithm can be implemented for security increase
+    """
+    while True:
+        for k in streams.keys():
+            if streams[k].isSynchronizer:
+                calc_hour = streams[k].synced_hour
+                sys_hour = str(datetime.datetime.now().strftime('%H:%M:%S'))
+                min_pack = streams[k].minimum_num_to_sync
+
+                print "Calculated Time: "+calc_hour
+                print "System Time: "+sys_hour
+                print "Minimum Number of packets to synchronize: "+min_pack
 
 def manage_pckg(pack):
     """
