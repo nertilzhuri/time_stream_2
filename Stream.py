@@ -154,7 +154,7 @@ class Stream:
                 #IDEA: Decide faster if all (any) are present -> Increase performance
                 for i in range(self.packetsChecked, self.packetNr):
                     #self.timestamps.append(timestamp)
-                    if self.clocks[i].length > 0:
+                    if len(self.clocks[i]) > 0:
                         hasCL = True
 
                     if self.av[i] == True:
@@ -173,25 +173,35 @@ class Stream:
         """
             Will be called for each new packet after the stream is decided
         """
-        c_hour = clock_t[4]
-        c_minute = clock_t[5]
-        c_seconds = clock_t[6]
+        clock_t = self.clocks[-1]
 
-        c_time = ""+str(c_hour)+":"+str(c_minute)+":"+str(c_seconds)
-        x = time.strptime(c_time,'%H:%M:%S')
-        c_sec = datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds()
+        if len(clock_t) <= 0:
+            if self._debugLevel >= 3:
+                print "Stream: "+self.ips+": Has no clock, waiting for next packet"
+            return
+        else:
 
-        #add the delay
-        #c_sec += delay
+            c_hour = clock_t[4]
+            c_minute = clock_t[5]
+            c_seconds = clock_t[6]
 
-        cc_time = str(datetime.timedelta(c_sec)) #to convert back
-        self.synced_hour = cc_time
-        self.num_pckg = self.packetNr
+            c_time = ""+str(c_hour)+":"+str(c_minute)+":"+str(c_seconds)
+            x = time.strptime(c_time,'%H:%M:%S')
+            c_sec = datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds()
 
-        if self.minimum_num_to_sync < 0:
-            self.minimum_num_to_sync = self.packetNr
+            #add the delay
+            #c_sec += delay
 
-        self.isSynchronizer = True
+            cc_time = str(datetime.timedelta(c_sec)) #to convert back
+            self.synced_hour = c_time
+            self.num_pckg = self.packetNr
+
+            if self.minimum_num_to_sync < 0:
+                self.minimum_num_to_sync = self.packetNr
+                if self._debugLevel >= 1:
+                    print "Stream: "+self.ips+": Successfully Synchronized clock"
+
+            self.isSynchronizer = True
 
     def blacklist(self):
         """
@@ -225,4 +235,4 @@ class Stream:
             print "Stream "+self.ips+" is DECIDED!"
 
         #TODO: Clean up not needed parts
-        clock_calculator_thread.start() #No need for thread
+        #clock_calculator_thread.start() #No need for thread

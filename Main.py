@@ -7,7 +7,7 @@ from Stream import *
 #Dictionary of streams (to find the stream faster)
 streams = {}
 
-DEBUG = 3; #level 0, 1, 2, 3
+DEBUG = 1; #level 0, 1, 2, 3
 
 def sync():
     """
@@ -21,9 +21,9 @@ def sync():
                 sys_hour = str(datetime.datetime.now().strftime('%H:%M:%S'))
                 min_pack = streams[k].minimum_num_to_sync
 
-                print "Calculated Time: "+calc_hour
-                print "System Time: "+sys_hour
-                print "Minimum Number of packets to synchronize: "+min_pack
+                print "Calculated Time: "+str(calc_hour)
+                print "System Time: "+str(sys_hour)
+                print "Minimum Number of packets to synchronize: "+str(min_pack)
 
 def manage_pckg(pack):
     """
@@ -108,6 +108,8 @@ def manage_pckg(pack):
                 #    print("Stream "+ip+" blacklisted due to no Raw layer")
                 #streams[ip].blacklisted = True;
                 return #end the thread here
+
+threading.Thread(target=sync).start()
 
 #call sniffer:
 sniff(prn=manage_pckg, store=0)
