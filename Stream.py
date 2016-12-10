@@ -1,6 +1,10 @@
 import time
 import threading
 import datetime
+import math
+
+plot_file = "time-8.txt"
+MY_IP = "192.168.0.110"
 
 class Stream:
     """
@@ -21,6 +25,7 @@ class Stream:
 
     isStream = False
     blacklisted = False
+
     isSynchronizer = False
 
     av = [] #List of -audio and -video in payloar #HLS
@@ -36,7 +41,8 @@ class Stream:
 
     #average calculator delays
     average_delay = 0
-    delays = []
+    calc_delays = []
+    sum_of_delays = 0
 
     #decider variables
     packetsChecked = 0
@@ -63,7 +69,7 @@ class Stream:
 
         threading.Thread(target=self._decider).start()
 
-    def record_packet(self, timestamp, clock, av, cth, ctd):
+    def record_packet(self, timestamp, clock, av, cth, ctd, src):
         self.timestamps.append(timestamp)
         self.clocks.append(clock)
         self.av.append(av)
@@ -77,7 +83,17 @@ class Stream:
 
         self.packetNr += 1
 
-        self.recordedTime.append(time.time())
+
+
+        #calculate delay and delay_average
+        if src != MY_IP:
+            self.recordedTime.append(time.time())
+            self._calculateAverage()
+            #print(self.calc_delays)
+        #self._calculateAverage()
+
+        #if len(self.calc_delays) > 0:
+        #    print ""+str(self.calc_delays[-1])+" - "+str((src == MY_IP))
 
         if self._debugLevel >= 2:
             print("Stream "+self.ips+" has a new packet")
@@ -87,12 +103,13 @@ class Stream:
             print(self.clocks)
             print(self.av)
             if self.stream_type == self._HLS:
-                print(self.content_type_hls)
+                #print(self.content_type_hls)
+                print("HLS Stream type")
             elif self.stream_type == self._DASH:
-                print(self.content_type_dash)
+                #print(self.content_type_dash)
+                print("DASH Stream type")
             print(self.recordedTime)
-
-        #call a thread to calculate delay and delay_average
+            print("Average Delay is: "+str(self.average_delay))
 
         if self.isStream:
             self._hourCalculate()
@@ -106,6 +123,11 @@ class Stream:
 
             Call this function on new packet
         """
+        if len(self.recordedTime) >= 2:
+        	last_delay = self.recordedTime[-1] - self.recordedTime[-2]
+        	self.calc_delays.append(last_delay)
+        	self.sum_of_delays += last_delay
+        	self.average_delay = self.sum_of_delays / float(len(self.calc_delays))
 
     def _decider(self):
         """
@@ -181,18 +203,31 @@ class Stream:
             return
         else:
 
-            c_hour = clock_t[4]
+            c_hour = int(clock_t[4])+1
+            #c_hour = clock_t[4]
             c_minute = clock_t[5]
-            c_seconds = clock_t[6]
+            c_seconds = float(clock_t[6]) + math.ceil(self.average_delay)
+
+            min = 0
+            sec = c_seconds
+
+            if c_seconds >= 60:
+                #127 / 6 = 2 127 % 6 = 7 2min7sec
+                #67 / 6 = 1 67 % 6 = 7 1min7sec
+                min = int(c_seconds) / int(60)
+                sec = int(c_seconds) % int(60)
+
+            c_minute = int(c_minute) + min
+            c_seconds = sec
 
             c_time = ""+str(c_hour)+":"+str(c_minute)+":"+str(c_seconds)
-            x = time.strptime(c_time,'%H:%M:%S')
-            c_sec = datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds()
+            #x = time.strptime(c_time,'%H:%M:%S')
+            #c_sec = datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds()
 
             #add the delay
             #c_sec += delay
 
-            cc_time = str(datetime.timedelta(c_sec)) #to convert back
+            #cc_time = str(datetime.timedelta(c_sec)) #to convert back
             self.synced_hour = c_time
             self.num_pckg = self.packetNr
 
@@ -202,6 +237,14 @@ class Stream:
                     print "Stream: "+self.ips+": Successfully Synchronized clock"
 
             self.isSynchronizer = True
+
+            f = open(plot_file, 'a')
+            calc_hour = c_time
+            sys_hour = str(datetime.datetime.now().strftime('%H:%M:%S'))
+
+            f.write(""+str(sys_hour)+","+str(calc_hour)+"\n")
+            f.close()
+            print "D: "+str(self.average_delay)
 
     def blacklist(self):
         """

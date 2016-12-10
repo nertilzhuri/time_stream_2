@@ -9,21 +9,30 @@ streams = {}
 
 DEBUG = 1; #level 0, 1, 2, 3
 
+plot_file = "time-2.txt"
+
 def sync():
     """
         This thread will collect the calculated times and display
         Here the marzullos algorithm can be implemented for security increase
     """
+
     while True:
         for k in streams.keys():
             if streams[k].isSynchronizer:
+                f = open(plot_file, 'a')
                 calc_hour = streams[k].synced_hour
                 sys_hour = str(datetime.datetime.now().strftime('%H:%M:%S'))
-                min_pack = streams[k].minimum_num_to_sync
+                #min_pack = streams[k].minimum_num_to_sync
 
-                print "Calculated Time: "+str(calc_hour)
-                print "System Time: "+str(sys_hour)
-                print "Minimum Number of packets to synchronize: "+str(min_pack)
+                #avg_delay = streams[k].average_delay;
+
+                #print "Calculated Time: "+str(calc_hour)+" delay: "+str(avg_delay)
+                #print "System Time: "+str(sys_hour)
+                #print "Minimum Number of packets to synchronize: "+str(min_pack)
+                f.write(""+str(sys_hour)+","+str(calc_hour)+"\n")
+                f.close()
+                time.sleep(0.5)
 
 def manage_pckg(pack):
     """
@@ -34,6 +43,8 @@ def manage_pckg(pack):
     if pack.haslayer("TCP"):
         ip1 = pack[IP].src
         ip2 = pack[IP].dst
+
+        src = ip1
 
         ip = str(ip1)+"|"+str(ip2)
         temp_ip = str(ip2)+"|"+str(ip1)
@@ -101,7 +112,7 @@ def manage_pckg(pack):
                     has_hls_content_type = "Content-Type: application/vnd.apple.mpegurl" in payload or "Content-Type: application/x-mpegURL" in payload
                     has_dash_content_type = "Content-Type: application/octet-stream" in payload
 
-                    streams[ip].record_packet(timestamp, clock_t, has_av, has_hls_content_type, has_dash_content_type)
+                    streams[ip].record_packet(timestamp, clock_t, has_av, has_hls_content_type, has_dash_content_type, src)
 
             else:
                 #if DEBUG >= 2:
